@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: default
+  name: {{ .PlanName }}-job
+spec:
+  template:
+    metadata:
+      name: {{ .PlanName }}-job
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: {{ .PlanName }}
+        image: influxdb
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - "influxd backup -portable -database {{ .Params.INFLUXDB_DB }} -host {{.Name}}-influx:8086 /backups"
+        volumeMounts:
+        - name: backup-pv
+          mountPath: /backups
+      volumes:
+      - name: backup-pv
+        persistentVolumeClaim:
+          claimName: {{ .Name }}-backup-pv
